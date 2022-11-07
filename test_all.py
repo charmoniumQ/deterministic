@@ -1,6 +1,7 @@
 import subprocess
 import itertools
 from pathlib import Path
+import sys
 import tempfile
 
 import pytest
@@ -12,7 +13,7 @@ def compiled_binary() -> Path:
         path = Path(_path) / "deterministic_random_preload.so"
         subprocess.run(
             [
-                "gcc", "-Wall", "-Werror", "-fPIC", "-shared", "-o", path, "deterministic_random_preload.c"
+                "gcc", "-O2", "-Wall", "-Werror", "-fPIC", "-shared", "-o", path, "deterministic_random_preload.c"
             ],
             check=True,
         )
@@ -20,29 +21,24 @@ def compiled_binary() -> Path:
 
 
 commands = [
-    ["head", "-c", "100", "/dev/urandom"],
-    ["head", "-c", "100", "/dev/random"],
-    # ["sh", "-c", "strings -s '' /dev/random | head -c 100"],
-    # ["sh", "-c", "strings -s '' /dev/urandom | head -c 100"],
-    # ["python", "-c", "import random; print(random.randint(0, 99))"],
-    # ["python", "-c", "print(hash('hi'))"],
+    "print(hash('hi'))",
+    "import random; print(random.randint(0, 99))",
+    "import secrets; print(secrets.randbits(10))",
+    "import numpy; print(numpy.random.random(10))",
 ]
 
 
-@pytest.mark.parametrize("use_determinism,command", list(itertools.product([True, False], commands)))
-def test_command(compiled_binary: Path, use_determinism: bool, command: list[str]) -> None:
-    if use_determinism:
-        prefix = ["setarch", "--addr-no-randomize", "env", f"LD_PRELOAD={compiled_binary}"]
-    else:
-        prefix = []
+@pytest.mark.parametrize("command", commands)
+def test_python_scripts(compiled_binary: Path, command: list[str]) -> None:
+    prefix = ["setarch", "--addr-no-randomize", "env", f"LD_PRELOAD={compiled_binary}"]
     proc0 = subprocess.run(
-        [*prefix, *command],
+        [*prefix, sys.executable, "-c", command],
         check=True,
         capture_output=True,
     ).stdout
     proc1 = subprocess.run(
-        [*prefix, *command],
+        [*prefix, sys.executable, "-c", command],
         check=True,
         capture_output=True,
     ).stdout
-    assert use_determinism == (proc0 == proc1)
+    assert proc0 == proc1

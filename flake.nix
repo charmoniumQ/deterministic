@@ -10,7 +10,11 @@
         devShells = {
           default = pkgs.mkShell {
             buildInputs = [
-              (pkgs.python310.withPackages(ps: [ps.pytest]))
+              (pkgs.python310.withPackages(ps: [
+                ps.pytest
+                ps.numpy
+              ]))
+              pkgs.stdenv
             ];
           };
         };
