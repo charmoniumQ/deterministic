@@ -110,54 +110,54 @@ bool INTERNAL remove_random_fd_if_exists(int fd) {
 	return false;
 }
 
-/* int open(const char* pathname, int flags, mode_t mode) { */
-/* 	ensure_initialized(); */
-/* 	if (PRINT_CALL) { */
-/* 		printf("Called open(%s, %d, %d)\n", pathname, flags, mode); */
-/* 	} */
-/* 	if (ENABLE && LIKELY(pathname != NULL) && UNLIKELY(strcmp(pathname, "/dev/random") || strcmp(pathname, "/dev/urandom"))) { */
-/* 		if (LIKELY(!full_random_fd())) { */
-/* 			int fd = process_state.real_open(pathname, flags, mode); */
-/* 			if (PRINT_INTERCEPTION) { */
-/* 				printf("Intercepting open(%s, %d, %d) = %d\n", pathname, flags, mode, fd); */
-/* 			} */
-/* 			set_random_fd(fd); */
-/* 			return fd; */
-/* 		} else { */
-/* 			return -EMFILE; */
-/* 		} */
-/* 	} else { */
-/* 		return process_state.real_open(pathname, flags, mode); */
-/* 	} */
-/* } */
+int open(const char* pathname, int flags, mode_t mode) {
+	ensure_initialized();
+	if (PRINT_CALL) {
+		printf("Called open(%s, %d, %d)\n", pathname, flags, mode);
+	}
+	if (ENABLE && LIKELY(pathname != NULL) && UNLIKELY(strcmp(pathname, "/dev/random") || strcmp(pathname, "/dev/urandom"))) {
+		if (LIKELY(!full_random_fd())) {
+			int fd = process_state.real_open(pathname, flags, mode);
+			if (PRINT_INTERCEPTION) {
+				printf("Intercepting open(%s, %d, %d) = %d\n", pathname, flags, mode, fd);
+			}
+			set_random_fd(fd);
+			return fd;
+		} else {
+			return -EMFILE;
+		}
+	} else {
+		return process_state.real_open(pathname, flags, mode);
+	}
+}
 
-/* int close(int fd) { */
-/* 	ensure_initialized(); */
-/* 	if (PRINT_CALL) { */
-/* 		printf("Called close(%d)\n", fd); */
-/* 	} */
-/* 	if (ENABLE && remove_random_fd_if_exists(fd) && PRINT_INTERCEPTION) { */
-/* 		printf("Intercepting close(%d)\n", fd); */
-/* 	} */
-/* 	return process_state.real_close(fd); */
-/* } */
+int close(int fd) {
+	ensure_initialized();
+	if (PRINT_CALL) {
+		printf("Called close(%d)\n", fd);
+	}
+	if (ENABLE && remove_random_fd_if_exists(fd) && PRINT_INTERCEPTION) {
+		printf("Intercepting close(%d)\n", fd);
+	}
+	return process_state.real_close(fd);
+}
 
-/* ssize_t read(int fd, void *buffer, size_t size) { */
-/* 	ensure_initialized(); */
-/* 	if (PRINT_CALL) { */
-/* 		printf("Called read(%d, %p, %ld)\n", fd, buffer, size); */
-/* 	} */
-/* 	mt_state* state; */
-/* 	if (ENABLE && UNLIKELY(NULL != (state = get_random_fd(fd)))) { */
-/* 		if (PRINT_INTERCEPTION) { */
-/* 			printf("Intercepting read(%d, %p, %ld)\n", fd, buffer, size); */
-/* 		} */
-/* 		fill_with_random(&process_state.random_state, buffer, size); */
-/* 		return size; */
-/* 	} else { */
-/* 		return process_state.real_read(fd, buffer, size); */
-/* 	} */
-/* } */
+ssize_t read(int fd, void *buffer, size_t size) {
+	ensure_initialized();
+	if (PRINT_CALL) {
+		printf("Called read(%d, %p, %ld)\n", fd, buffer, size);
+	}
+	mt_state* state;
+	if (ENABLE && UNLIKELY(NULL != (state = get_random_fd(fd)))) {
+		if (PRINT_INTERCEPTION) {
+			printf("Intercepting read(%d, %p, %ld)\n", fd, buffer, size);
+		}
+		fill_with_random(&process_state.random_state, buffer, size);
+		return size;
+	} else {
+		return process_state.real_read(fd, buffer, size);
+	}
+}
 
 ssize_t getrandom(void *buffer, size_t size, unsigned int flags) {
 	ensure_initialized();

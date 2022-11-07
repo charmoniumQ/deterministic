@@ -25,6 +25,7 @@ commands = [
     "import random; print(random.randint(0, 99))",
     "import secrets; print(secrets.randbits(10))",
     "import numpy; print(numpy.random.random(10))",
+    "print(id(object()))"
 ]
 
 
