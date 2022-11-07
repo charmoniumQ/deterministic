@@ -10,12 +10,8 @@
         devShells = {
           default = pkgs.mkShell {
             buildInputs = [
-              pkgs.cargo
-              pkgs.libclang.lib
+              pkgs.python310.withPackages(ps: [ps.pytest])
             ];
-            shellHook = ''
-              export LIBCLANG_PATH=${pkgs.libclang.lib}/lib
-            '';
           };
         };
       }
